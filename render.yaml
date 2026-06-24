@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: packet-analyzer
+    runtime: python
+    rootDir: Packet_analyzer-main
+    buildCommand: pip install -r requirements.txt && chmod +x dpi_engine
+    startCommand: python server.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
