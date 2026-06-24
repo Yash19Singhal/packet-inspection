@@ -1,0 +1,29 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Executables
+*.exe
+*.out
+
+# Build artifacts
+build/
+*.o
+*.obj
+
+# Uploads
+uploads/
+
+# Test files
+test_api.py
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="DPI Engine v2.0 — Deep Packet Inspection visualization dashboard. Upload .pcap files and analyze network traffic in real-time.">
+    <title>DPI Engine — Deep Packet Inspection Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="app-container">
+
+    <!-- ========== HEADER ========== -->
+    <header class="header">
+        <div class="header__badge">
+            <span class="header__badge-dot"></span>
+            Deep Packet Inspection Engine
+        </div>
+        <h1 class="header__title">DPI Engine v2.0</h1>
+        <p class="header__subtitle">Multi-threaded packet analysis &amp; visualization dashboard</p>
+    </header>
+
+    <!-- ========== UPLOAD ZONE ========== -->
+    <section class="upload-section">
+        <div class="upload-zone" id="upload-zone">
+            <span class="upload-zone__icon">📦</span>
+            <p class="upload-zone__title">Drop your .pcap file here</p>
+            <p class="upload-zone__subtitle">or <strong>click to browse</strong> — supports standard pcap format</p>
+            <input type="file" class="upload-zone__input" id="pcap-input" accept=".pcap">
+            <div class="upload-file-info" id="file-info">
+                <span>📄</span>
+                <span class="upload-file-info__name" id="file-name"></span>
+                <span class="upload-file-info__size" id="file-size"></span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== CONTROLS BAR ========== -->
+    <div class="controls-bar">
+        <div class="control-group">
+            <label class="control-group__label" for="block-ips">Block IPs</label>
+            <input class="control-group__input" type="text" id="block-ips" placeholder="e.g. 192.168.1.50">
+        </div>
+        <div class="control-group">
+            <label class="control-group__label" for="block-apps">Block Apps</label>
+            <input class="control-group__input" type="text" id="block-apps" placeholder="e.g. YouTube, Facebook">
+        </div>
+        <div class="control-group">
+            <label class="control-group__label" for="block-domains">Block Domains</label>
+            <input class="control-group__input" type="text" id="block-domains" placeholder="e.g. tiktok.com">
+        </div>
+        <button class="btn-analyze" id="btn-analyze" disabled>
+            ⚡ Analyze
+        </button>
+    </div>
+
+    <!-- ========== ERROR BANNER ========== -->
+    <div class="error-banner" id="error-banner">
+        <span>⚠️</span>
+        <span id="error-text"></span>
+    </div>
+
+    <!-- ========== RESULTS SECTION ========== -->
+    <section class="results-section" id="results-section">
+
+        <!-- Engine Config Bar -->
+        <div class="config-bar" id="config-bar">
+            <div class="config-item">
+                <span class="config-item__label">Load Balancers</span>
+                <span class="config-item__value" id="cfg-lbs">—</span>
+            </div>
+            <div class="config-item">
+                <span class="config-item__label">FPs per LB</span>
+                <span class="config-item__value" id="cfg-fps-per-lb">—</span>
+            </div>
+            <div class="config-item">
+                <span class="config-item__label">Total Fast Paths</span>
+                <span class="config-item__value" id="cfg-total-fps">—</span>
+            </div>
+        </div>
+
+        <!-- Blocked Rules Tags -->
+        <div class="blocked-rules-bar" id="blocked-rules-bar"></div>
+
+        <!-- Summary Stats -->
+        <p class="section-title">Overview</p>
+        <div class="stats-grid" id="stats-grid">
+            <div class="stat-card stat-card--cyan">
+                <span class="stat-card__icon">📊</span>
+                <p class="stat-card__label">Total Packets</p>
+                <p class="stat-card__value" id="stat-total-packets">0</p>
+            </div>
+            <div class="stat-card stat-card--purple">
+                <span class="stat-card__icon">💾</span>
+                <p class="stat-card__label">Total Bytes</p>
+                <p class="stat-card__value" id="stat-total-bytes">0</p>
+                <p class="stat-card__sub" id="stat-total-bytes-human"></p>
+            </div>
+            <div class="stat-card stat-card--blue">
+                <span class="stat-card__icon">🔗</span>
+                <p class="stat-card__label">TCP Packets</p>
+                <p class="stat-card__value" id="stat-tcp">0</p>
+            </div>
+            <div class="stat-card stat-card--amber">
+                <span class="stat-card__icon">📡</span>
+                <p class="stat-card__label">UDP Packets</p>
+                <p class="stat-card__value" id="stat-udp">0</p>
+            </div>
+            <div class="stat-card stat-card--emerald">
+                <span class="stat-card__icon">✅</span>
+                <p class="stat-card__label">Forwarded</p>
+                <p class="stat-card__value" id="stat-forwarded">0</p>
+            </div>
+            <div class="stat-card stat-card--pink">
+                <span class="stat-card__icon">🚫</span>
+                <p class="stat-card__label">Dropped</p>
+                <p class="stat-card__value" id="stat-dropped">0</p>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <p class="section-title">Traffic Analysis</p>
+        <div class="charts-grid">
+            <div class="chart-panel" style="animation-delay: 0.1s;">
+                <h3 class="chart-panel__title">
+                    <span class="chart-panel__title-icon">🔵</span>
+                    Protocol Distribution
+                </h3>
+                <div class="chart-container chart-container--doughnut">
+                    <canvas id="chart-protocol"></canvas>
+                </div>
+            </div>
+            <div class="chart-panel" style="animation-delay: 0.15s;">
+                <h3 class="chart-panel__title">
+                    <span class="chart-panel__title-icon">📱</span>
+                    Application Breakdown
+                </h3>
+                <div class="chart-container">
+                    <canvas id="chart-apps"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thread Stats Chart -->
+        <p class="section-title">Engine Performance</p>
+        <div class="charts-grid">
+            <div class="chart-panel" style="animation-delay: 0.2s;">
+                <h3 class="chart-panel__title">
+                    <span class="chart-panel__title-icon">⚙️</span>
+                    Load Balancer Distribution
+                </h3>
+                <div class="chart-container">
+                    <canvas id="chart-lb"></canvas>
+                </div>
+            </div>
+            <div class="chart-panel" style="animation-delay: 0.25s;">
+                <h3 class="chart-panel__title">
+                    <span class="chart-panel__title-icon">🧵</span>
+                    Fast Path Processing
+                </h3>
+                <div class="chart-container">
+                    <canvas id="chart-fp"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detected Domains Table -->
+        <p class="section-title">Detected Domains</p>
+        <div class="table-panel" style="animation-delay: 0.3s;">
+            <div class="table-panel__header">
+                <h3 class="table-panel__title">
+                    <span>🌐</span>
+                    SNI / Domain Detection
+                </h3>
+                <input type="text" class="table-search" id="domain-search" placeholder="🔍  Search domains...">
+            </div>
+            <table class="domains-table" id="domains-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Domain / SNI</th>
+                        <th>Classified As</th>
+                    </tr>
+                </thead>
+                <tbody id="domains-tbody">
+                </tbody>
+            </table>
+        </div>
+
+    </section>
+
+    <!-- ========== EMPTY STATE ========== -->
+    <div class="empty-state" id="empty-state">
+        <span class="empty-state__icon">🔍</span>
+        <p class="empty-state__text">Upload a .pcap file to begin deep packet inspection</p>
+    </div>
+
+</div>
+
+<!-- ========== LOADING OVERLAY ========== -->
+<div class="loading-overlay" id="loading-overlay">
+    <div class="loading-spinner"></div>
+    <p class="loading-text">Analyzing packets…</p>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
