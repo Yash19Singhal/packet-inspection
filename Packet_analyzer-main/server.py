@@ -16,9 +16,9 @@ app = Flask(__name__, static_folder="static", static_url_path="")
 CORS(app)
 
 # Path to the DPI engine executable (supports Windows and Linux)
-is_windows = os.name == 'nt'
-engine_name = "dpi_engine.exe" if is_windows else "./dpi_engine"
-DPI_ENGINE = os.path.join(os.path.dirname(os.path.abspath(__file__)), engine_name)
+_base_dir = os.path.dirname(os.path.abspath(__file__))
+engine_name = "dpi_engine.exe" if os.name == 'nt' else "dpi_engine"
+DPI_ENGINE = os.path.join(_base_dir, engine_name)
 
 # Uploads directory
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
