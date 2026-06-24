@@ -2,7 +2,16 @@ services:
   - type: web
     name: packet-analyzer
     runtime: python
-    buildCommand: pip install -r Packet_analyzer-main/requirements.txt && chmod +x Packet_analyzer-main/dpi_engine
+    buildCommand: >-
+      pip install -r Packet_analyzer-main/requirements.txt &&
+      g++ -std=c++17 -pthread -O2
+      -I Packet_analyzer-main/include
+      -o Packet_analyzer-main/dpi_engine
+      Packet_analyzer-main/src/dpi_mt.cpp
+      Packet_analyzer-main/src/pcap_reader.cpp
+      Packet_analyzer-main/src/packet_parser.cpp
+      Packet_analyzer-main/src/sni_extractor.cpp
+      Packet_analyzer-main/src/types.cpp
     startCommand: python Packet_analyzer-main/server.py
     envVars:
       - key: PYTHON_VERSION
